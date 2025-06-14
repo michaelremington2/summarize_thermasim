@@ -1,24 +1,62 @@
-import polars as pl
+# -*- coding: utf-8 -*-
+import main
+import duckdb
+import pathlib as pl
 
 class CoalateRattlesnake:
     def __init__(self, path_db, con):
         self.path_db = path_db
         self.con = con
-        self.table_name = "rattlesnake_raw"
+        self.table_name = "rattlesnake_db"
+        self.test_path_1 = '/home/micha/Documents/post_thermasim_results/climate_exps/Texas_Current/Results/rep_117600/Rattlesnake.csv'
+        self.test_path_2 = '/home/micha/Documents/post_thermasim_results/climate_exps/Canada_1/Results/rep_463312/Rattlesnake.csv'
 
     def create_table(self):
         self.con.execute(f"""
         CREATE OR REPLACE TABLE {self.table_name} (
             site TEXT,
             experiment TEXT,
-            sim_id TEXT,
+            sim_id INTEGER,
             time_step INTEGER,
-            agent_id TEXT,
+            agent_id INTEGER,
             mass DOUBLE,
             body_temperature DOUBLE,
             metabolic_state DOUBLE
         );
         """)
+
+    def insert_csv(self, csv_path, site, experiment, sim_id):
+        self.con.execute(f"""
+            INSERT INTO {self.table_name}
+            SELECT
+                '{site}' AS site,
+                '{experiment}' AS experiment,
+                {sim_id} AS sim_id,
+                Time_Step,
+                Agent_id,
+                Mass,
+                Body_Temperature,
+                Metabolic_State
+            FROM read_csv_auto('{csv_path}')
+        """)
+
+
+    
+    def insert_test(self):
+        list_of_csv_paths = [self.test_path_1,
+                             self.test_path_2]
+        for path in list_of_csv_paths:
+            path = pl.Path(path)
+            site = main.extract_site(path)
+            experiment = main.extract_experiment_name(path)
+            sim_id = main.extract_sim_id(path)
+            print(f'file {path}, site {site}, experiment {experiment}, simid {sim_id}')
+            try:
+                self.insert_csv(str(path), site, experiment, sim_id)
+            except Exception as e:
+                print(f"[WARN] Failed to process {path}: {e}")
+            print(f"Inserted {path} into {self.table_name}")
+
 
     def insert_all(self):
         for site, exps in self.path_db.items():
@@ -27,31 +65,21 @@ class CoalateRattlesnake:
                     path = file_dict.get("Rattlesnake")
                     if path is None or not path.exists():
                         continue
-
                     try:
-                        # Read only needed columns for memory safety
-                        df = pl.read_csv(str(path)).select([
-                            "Time_Step", "Agent_id", "Mass", "Body_Temperature", "Metabolic_State"
-                        ])
-
-                        # Add metadata columns
-                        df = df.with_columns([
-                            pl.lit(site).alias("site"),
-                            pl.lit(experiment).alias("experiment"),
-                            pl.lit(sim_id).alias("sim_id"),
-                        ])
-
-                        # Reorder to match DuckDB schema
-                        df = df.select([
-                            "site", "experiment", "sim_id",
-                            "Time_Step", "Agent_id", "Mass",
-                            "Body_Temperature", "Metabolic_State"
-                        ])
-
-                        # Register and insert
-                        self.con.register("temp_rattlesnake", df.to_pandas())
-                        self.con.execute(f"INSERT INTO {self.table_name} SELECT * FROM temp_rattlesnake")
-                        self.con.unregister("temp_rattlesnake")
-
+                        self.insert_csv(str(path), site, experiment, sim_id)
                     except Exception as e:
                         print(f"[WARN] Failed to process {path}: {e}")
+
+    def query_snake_table(self, query):
+        """
+        Execute a query on the rattlesnake table and return the results as a DataFrame.
+        """
+        return self.con.execute(query).fetchdf()
+
+if __name__ == "__main__":
+    con = duckdb.connect(database=":memory:")
+    path_db = {}
+    snake_db = CoalateRattlesnake(path_db=path_db, con=con)
+    snake_db.create_table()
+    snake_db.insert_test()
+    
