@@ -3,7 +3,7 @@ import main
 import duckdb
 import pathlib as pl
 
-class CoalateRattlesnake:
+class CollateRattlesnake:
     def __init__(self, path_db, con):
         self.path_db = path_db
         self.con = con
@@ -14,14 +14,27 @@ class CoalateRattlesnake:
     def create_table(self):
         self.con.execute(f"""
         CREATE OR REPLACE TABLE {self.table_name} (
-            site TEXT,
-            experiment TEXT,
+            Study_Site TEXT,
+            Experiment TEXT,
             sim_id INTEGER,
-            time_step INTEGER,
-            agent_id INTEGER,
-            mass DOUBLE,
-            body_temperature DOUBLE,
-            metabolic_state DOUBLE
+            Time_Step INTEGER, 
+            Hour INTEGER, 
+            Day INTEGER, 
+            Month INTEGER, 
+            Year INTEGER, 
+            Agent_id INTEGER, 
+            Active BOOLEAN,
+            Alive BOOLEAN, 
+            Behavior TEXT, 
+            Microhabitat TEXT, 
+            Body_Temperature DOUBLE, 
+            Mass DOUBLE,
+            Metabolic_State DOUBLE, 
+            Handling_Time DOUBLE, 
+            Attack_Rate DOUBLE, 
+            Prey_Density DOUBLE,
+            Prey_Encountered DOUBLE, 
+            Prey_Consumed DOUBLE,
         );
         """)
 
@@ -29,16 +42,30 @@ class CoalateRattlesnake:
         self.con.execute(f"""
             INSERT INTO {self.table_name}
             SELECT
-                '{site}' AS site,
-                '{experiment}' AS experiment,
+                '{site}' AS Study_Site,
+                '{experiment}' AS Experiment,
                 {sim_id} AS sim_id,
-                Time_Step,
-                Agent_id,
+                Time_Step, 
+                Hour, 
+                Day, 
+                Month, 
+                Year, 
+                Agent_id, 
+                Active,
+                Alive, 
+                Behavior, 
+                Microhabitat, 
+                Body_Temperature, 
                 Mass,
-                Body_Temperature,
-                Metabolic_State
+                Metabolic_State, 
+                Handling_Time, 
+                Attack_Rate, 
+                Prey_Density,
+                Prey_Encountered, 
+                Prey_Consumed,
             FROM read_csv_auto('{csv_path}')
         """)
+        return
 
 
     
@@ -56,6 +83,7 @@ class CoalateRattlesnake:
             except Exception as e:
                 print(f"[WARN] Failed to process {path}: {e}")
             print(f"Inserted {path} into {self.table_name}")
+        return
 
 
     def insert_all(self):
@@ -76,10 +104,15 @@ class CoalateRattlesnake:
         """
         return self.con.execute(query).fetchdf()
 
+
 if __name__ == "__main__":
     con = duckdb.connect(database=":memory:")
     path_db = {}
-    snake_db = CoalateRattlesnake(path_db=path_db, con=con)
+    snake_db = CollateRattlesnake(path_db=path_db, con=con)
     snake_db.create_table()
-    snake_db.insert_test()
+    #snake_db.insert_test()
+    snake_db.insert_all()
+    query = "SELECT * FROM rattlesnake_db LIMIT 10;"
+    df = snake_db.query_snake_table(query)
+    print(df)
     

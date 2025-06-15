@@ -5,8 +5,9 @@ import numpy as np
 import os
 import pathlib as pl
 import re
-from summarize_snakes import CoalateRattlesnake
-from summarize_bd import CoalateBirthDeath
+from summarize_snakes import CollateRattlesnake
+from summarize_bd import CollateBirthDeath
+from summarize_model import CollateModel
 
 # Helper functions to extract metadata from file paths
 def extract_site(path):
@@ -95,6 +96,36 @@ class SimSummarizer:
     
     def make_bd_csvlist(self):
         return None
+    
+    def initialize_tables(self, model=True, rattlesnake=True, bd=True):
+        """
+        Initialize the DuckDB tables for model, rattlesnake, and birth-death data.
+        """
+        if model:
+            self.con.execute("""
+                CREATE TABLE IF NOT EXISTS model_raw (
+                    site VARCHAR,
+                    experiment INT,
+                    sim_id INT,
+                    Time_Step INT,
+                    Agent_id INT,
+                    Mass FLOAT,
+                    Body_Temperature FLOAT,
+                    Metabolic_State VARCHAR
+                );
+            """)
+        
+        if rattlesnake:
+            CollateRattlesnake(self.path_db, self.con).create_table()
+        
+        if bd:
+            CollateBirthDeath(self.path_db, self.con).create_table()
+    
+    def query_sim_table(self, query):
+        """
+        Execute a query on the simulation table and return the results as a DataFrame.
+        """
+        return self.con.execute(query).fetchdf()
     
     
 

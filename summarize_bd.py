@@ -1,78 +1,119 @@
 #!/usr/bin/python
 import polars as po
-import duckdb as db
+import duckdb
 import numpy as np
 import os
 import pathlib as pl
 import re
 from tqdm import tqdm
+import main
 
 
-class CoalateBirthDeath:
+class CollateBirthDeath:
     def __init__(self, path_db, con):
         self.path_db = path_db
         self.con = con
-        self.table_name = "birthdeath"
+        self.table_name = "birthdeath_db"
+        self.test_path_1 = '/home/micha/Documents/post_thermasim_results/climate_exps/Texas_Current/Results/rep_117600/BirthDeath.csv'
+        self.test_path_2 = '/home/micha/Documents/post_thermasim_results/climate_exps/Canada_1/Results/rep_463312/BirthDeath.csv'
 
     def create_table(self):
         self.con.execute(f"""
         CREATE OR REPLACE TABLE {self.table_name} (
-            site TEXT,
-            experiment TEXT,
+            Study_Site TEXT,
+            Experiment TEXT,
             sim_id TEXT,
-            time_step INTEGER,
-            agent_id TEXT,
-            species TEXT,
-            age DOUBLE,
-            sex TEXT,
-            mass DOUBLE,
-            birth_counter INTEGER,
-            death_counter INTEGER,
-            alive BOOLEAN,
-            event_type TEXT,
-            cause_of_death TEXT,
-            litter_size INTEGER,
-            body_temperature DOUBLE,
+            Time_Step INTEGER,
+            Agent_id TEXT,
+            Species TEXT,
+            Age DOUBLE,
+            Sex TEXT,
+            Mass DOUBLE,
+            Birth_Counter DOUBLE,
+            Death_Counter DOUBLE,
+            Alive BOOLEAN,
+            Event_Type TEXT,
+            Cause_Of_Death TEXT,
+            Litter_Size INTEGER,
+            Body_Temperature DOUBLE,
             ct_min DOUBLE,
             ct_max DOUBLE
         );
         """)
+        return
+    
+    def insert_csv(self, csv_path, site, experiment,sim_id):
+        self.con.execute(f"""
+                INSERT INTO {self.table_name}
+                SELECT
+                    '{site}' AS Study_Site,
+                    '{experiment}' AS Experiment,
+                    {sim_id} AS sim_id,
+                    Time_Step, 
+                    Agent_id,
+                    Species,
+                    Age,
+                    Sex,
+                    Mass,
+                    Birth_Counter,
+                    Death_Counter,
+                    Alive,
+                    Event_Type,
+                    Cause_Of_Death,
+                    Litter_Size,
+                    Body_Temperature,
+                    ct_min,
+                    ct_max
+                FROM read_csv_auto('{csv_path}')
+            """)
+        return
+    
+    def insert_test(self):
+        list_of_csv_paths = [self.test_path_1,
+                             self.test_path_2]
+        for path in list_of_csv_paths:
+            path = pl.Path(path)
+            site = main.extract_site(path)
+            experiment = main.extract_experiment_name(path)
+            sim_id = main.extract_sim_id(path)
+            print(f'file {path}, site {site}, experiment {experiment}, simid {sim_id}')
+            try:
+                self.insert_csv(str(path), site, experiment, sim_id)
+            except Exception as e:
+                print(f"[WARN] Failed to process {path}: {e}")
+            print(f"Inserted {path} into {self.table_name}")
+        return
 
     def insert_all(self):
-        with self.con.appender(self.table_name) as app:
-            for site, exps in tqdm(self.path_db.items(), desc="Sites"):
-                for experiment, sims in exps.items():
-                    for sim_id, file_dict in sims.items():
-                        bd_path = file_dict.get("BirthDeath")
-                        if bd_path is None:
-                            continue
+        for site, exps in self.path_db.items():
+            for experiment, sims in exps.items():
+                for sim_id, file_dict in sims.items():
+                    path = file_dict.get("BirthDeath")
+                    if path is None or not path.exists():
+                        continue
+                    try:
+                        self.insert_csv(str(path), site, experiment, sim_id)
+                    except Exception as e:
+                        print(f"[WARN] Failed to process {path}: {e}")
+        return
 
-                        try:
-                            df = pl.read_csv(str(bd_path), infer_schema_length=1000)
-
-                            for row in df.iter_rows(named=True):
-                                app.append((
-                                    site,
-                                    experiment,
-                                    sim_id,
-                                    row.get("Time_Step"),
-                                    row.get("Agent_id"),
-                                    row.get("Species"),
-                                    row.get("Age"),
-                                    row.get("Sex"),
-                                    row.get("Mass"),
-                                    row.get("Birth_Counter"),
-                                    row.get("Death_Counter"),
-                                    row.get("Alive"),
-                                    row.get("Event_Type"),
-                                    row.get("Cause_Of_Death"),
-                                    row.get("Litter_Size"),
-                                    row.get("Body_Temperature"),
-                                    row.get("ct_min"),
-                                    row.get("ct_max"),
-                                ))
-
-                        except Exception as e:
-                            print(f"[WARN] Failed to process {bd_path}: {e}")
+    def query_bd_table(self, query):
+        """
+        Execute a query on the model table and return the results as a DataFrame.
+        """
+        return self.con.execute(query).fetchdf()
+    
+if __name__ == "__main__":
+    con = duckdb.connect(database=":memory:")
+    path_db = {}
+    birthdeath_db = CollateBirthDeath(path_db=path_db, con=con)
+    birthdeath_db.create_table()
+    birthdeath_db.insert_test()
+    query = "SELECT *" \
+    "        FROM birthdeath_db" \
+    "        ORDER BY Litter_Size" \
+    "        DESC LIMIT 10;"
+    df = birthdeath_db.query_bd_table(query)
+    print(df)
 
     
