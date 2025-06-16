@@ -9,23 +9,6 @@ from summarize_snakes import CollateRattlesnake
 from summarize_bd import CollateBirthDeath
 from summarize_model import CollateModel
 
-# Helper functions to extract metadata from file paths
-def extract_site(path):
-    site_exp = path.parts[-4]
-    site = site_exp.split('_')[0] 
-    return site
-
-def extract_experiment_name(path):
-    site_exp = path.parts[-4]
-    exp = site_exp.split('_')[1]
-    if exp == 'Current':
-        return 0
-    return int(exp)
-
-def extract_sim_id(path):
-    rep_simid = path.parts[-2]
-    sim_id = rep_simid.split('_')[1]
-    return int(sim_id)
 
 class SimSummarizer:
     '''
@@ -35,6 +18,9 @@ class SimSummarizer:
     def __init__(self, parent_directory, site_names , db_path=None):
         self.parent_directory = pl.Path(parent_directory)
         self.site_names = site_names
+        self.results_paths = {'model': [],
+                              'rattlesnake': [],
+                              'birthdeath': []}
         self.path_db = self.make_path_db()
         if db_path:
             db_path = pl.Path(db_path).resolve()
@@ -44,6 +30,8 @@ class SimSummarizer:
         else:
             print(f"[INFO] Using in-memory DuckDB database")
             self.con = duckdb.connect(database=":memory:")
+
+        
 
     def make_path_db(self):
         path_db = {}
@@ -66,7 +54,16 @@ class SimSummarizer:
                                     for file in sim_dir.glob("*.csv"):
                                         csv_type = file.stem  # filename without extension
                                         path_db[site][experiment][sim_id][csv_type] = file.resolve()
-
+                                        if csv_type == "Model":
+                                            self.results_paths['model'].append(file.resolve())
+                                        elif csv_type == "Rattlesnake":
+                                            self.results_paths['rattlesnake'].append(file.resolve())
+                                        elif csv_type == "BirthDeath":
+                                            self.results_paths['birthdeath'].append(file.resolve())
+                                        elif csv_type == "KangarooRat":
+                                            pass
+                                        else:
+                                            print(f"[WARN] Unrecognized CSV type '{csv_type}' in {file}")
         return path_db
     
     def make_metadata_path_db(self):
@@ -87,39 +84,28 @@ class SimSummarizer:
 
     def get_connection(self):
         return self.con
+
     
-    def make_model_csvlist(self):
-        return None
-    
-    def make_rattlesnake_csvlist(self):
-        return None
-    
-    def make_bd_csvlist(self):
-        return None
     
     def initialize_tables(self, model=True, rattlesnake=True, bd=True):
         """
         Initialize the DuckDB tables for model, rattlesnake, and birth-death data.
         """
         if model:
-            self.con.execute("""
-                CREATE TABLE IF NOT EXISTS model_raw (
-                    site VARCHAR,
-                    experiment INT,
-                    sim_id INT,
-                    Time_Step INT,
-                    Agent_id INT,
-                    Mass FLOAT,
-                    Body_Temperature FLOAT,
-                    Metabolic_State VARCHAR
-                );
-            """)
-        
+            self.mdb = CollateModel(self.path_db, self.con)
+            self.mdb.create_table()
+            model_csvs = self.results_paths['model']
+            self.mdb.insert_all(csv_list=model_csvs)
         if rattlesnake:
-            CollateRattlesnake(self.path_db, self.con).create_table()
-        
+            self.rdb = CollateRattlesnake(self.path_db, self.con)
+            self.rdb.create_table()
+            snake_csvs = self.results_paths['rattlesnake']
+            self.rdb.insert_all(csv_list=snake_csvs)
         if bd:
-            CollateBirthDeath(self.path_db, self.con).create_table()
+            self.bddb = CollateBirthDeath(self.path_db, self.con)
+            self.bddb.create_table()
+            bd_csvs = self.results_paths['birthdeath']
+            self.bddb.insert_all(csv_list=bd_csvs)
     
     def query_sim_table(self, query):
         """
@@ -132,19 +118,20 @@ class SimSummarizer:
 
 
 if __name__ == "__main__":
-    from summarize_bd import CoalateBirthDeath
 
     site_names = ["Texas", "Nebraska", "Canada"]
-    simsum = SimSummarizer(parent_directory="../climate_exps/", site_names=site_names)
+    thermadb_path = "/mnt/d/Documents/therma_sim_test_db/thermasim.duckdb"
 
-    # shared in-memory DuckDB
-    con = simsum.get_connection()
+    simsum = SimSummarizer(
+        parent_directory="../climate_exps/",
+        site_names=site_names,
+        db_path=thermadb_path
+    )
 
-    # run birth-death coalescence into DuckDB
-    cbd = CoalateBirthDeath(simsum.get_path_db(), con)
-    cbd.create_table()
-    cbd.insert_all()
+    # Optional: create tables
+    #simsum.initialize_tables(model=True, rattlesnake=True, bd=True)
 
-    # verify or query immediately
-    df = con.execute("SELECT site, event_type, COUNT(*) FROM birthdeath_raw GROUP BY site, event_type").fetchdf()
+    # Query
+    df = simsum.query_sim_table("SELECT Study_Site, Cause_Of_Death, COUNT(*) FROM birthdeath_db GROUP BY Study_Site, Cause_Of_Death;")
     print(df)
+

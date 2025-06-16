@@ -1,12 +1,7 @@
 #!/usr/bin/python
-import polars as po
-import duckdb
-import numpy as np
-import os
 import pathlib as pl
-import re
-from tqdm import tqdm
-import main
+import meta_utilz
+import duckdb
 
 
 class CollateBirthDeath:
@@ -73,9 +68,9 @@ class CollateBirthDeath:
                              self.test_path_2]
         for path in list_of_csv_paths:
             path = pl.Path(path)
-            site = main.extract_site(path)
-            experiment = main.extract_experiment_name(path)
-            sim_id = main.extract_sim_id(path)
+            site = meta_utilz.extract_site(path)
+            experiment = meta_utilz.extract_experiment_name(path)
+            sim_id = meta_utilz.extract_sim_id(path)
             print(f'file {path}, site {site}, experiment {experiment}, simid {sim_id}')
             try:
                 self.insert_csv(str(path), site, experiment, sim_id)
@@ -84,17 +79,15 @@ class CollateBirthDeath:
             print(f"Inserted {path} into {self.table_name}")
         return
 
-    def insert_all(self):
-        for site, exps in self.path_db.items():
-            for experiment, sims in exps.items():
-                for sim_id, file_dict in sims.items():
-                    path = file_dict.get("BirthDeath")
-                    if path is None or not path.exists():
-                        continue
-                    try:
-                        self.insert_csv(str(path), site, experiment, sim_id)
-                    except Exception as e:
-                        print(f"[WARN] Failed to process {path}: {e}")
+    def insert_all(self, csv_list):
+        for file in csv_list:
+            try:
+                site = meta_utilz.extract_site(file)
+                experiment = meta_utilz.extract_experiment_name(file)
+                sim_id = meta_utilz.extract_sim_id(file)
+                self.insert_csv(str(file), site, experiment, sim_id)
+            except Exception as e:
+                print(f"[WARN] Failed to process {file}: {e}")
         return
 
     def query_bd_table(self, query):
