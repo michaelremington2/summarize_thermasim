@@ -118,20 +118,28 @@ class SimSummarizer:
 
 
 if __name__ == "__main__":
-
     site_names = ["Texas", "Nebraska", "Canada"]
-    thermadb_path = "/mnt/d/Documents/therma_sim_test_db/thermasim.duckdb"
+    thermadb_path = "/mnt/d/Documents/therma_sim.duckdb"
+    parent_directory = pl.Path("/mnt/d/Documents/climate_exps/")
 
     simsum = SimSummarizer(
-        parent_directory="../climate_exps/",
+        parent_directory=parent_directory,
         site_names=site_names,
         db_path=thermadb_path
     )
 
     # Optional: create tables
-    #simsum.initialize_tables(model=True, rattlesnake=True, bd=True)
+    simsum.initialize_tables(model=True, rattlesnake=False, bd=False)
 
     # Query
-    df = simsum.query_sim_table("SELECT Study_Site, Cause_Of_Death, COUNT(*) FROM birthdeath_db GROUP BY Study_Site, Cause_Of_Death;")
-    print(df)
+    df = simsum.query_sim_table("""
+        SELECT Study_Site, Experiment, Year, Month, Day, AVG(Rattlesnakes) AS Avg_Rattlesnakes, AVG(Krats) as Avg_Krats, AVG(Rattlesnakes_Density) AS Avg_Rattlesnakes_Density, AVG(Krats_Density) AS Avg_Krats_Density, AVG(Rattlesnakes_Active) AS Avg_Rattlesnakes_Active, AVG(Krats_Active) AS Avg_Krats_Active
+        FROM model_db
+    """)
+
+    # Write to CSV
+    output_path = "/mnt/d/Documents/summary_avg_model.csv"
+    df.to_csv(output_path)
+
+    print(f"[INFO] Query results written to: {output_path}")
 
