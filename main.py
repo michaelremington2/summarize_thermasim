@@ -133,8 +133,9 @@ if __name__ == "__main__":
 
     # Query
     df = simsum.query_sim_table("""
-        SELECT Study_Site, Experiment, Year, Month, Day, AVG(Rattlesnakes) AS Avg_Rattlesnakes, AVG(Krats) as Avg_Krats, AVG(Rattlesnakes_Density) AS Avg_Rattlesnakes_Density, AVG(Krats_Density) AS Avg_Krats_Density, AVG(Rattlesnakes_Active) AS Avg_Rattlesnakes_Active, AVG(Krats_Active) AS Avg_Krats_Active
+        SELECT Study_Site, Experiment, Year, Month, Day, AVG(Rattlesnakes) AS Avg_Rattlesnakes, AVG(Krats) as Avg_Krats, AVG(Rattlesnakes_Density) AS Avg_Rattlesnakes_Density, AVG(Krats_Density) AS Avg_Krats_Density, AVG(Rattlesnakes_Active) AS Avg_Rattlesnakes_Active, AVG(Krats_Active) AS Avg_Krats_Active, count(distinct Sim_ID) AS Num_Sims
         FROM model_db
+        group by Study_Site, Experiment, Year, Month, Day
     """)
 
     # Write to CSV
