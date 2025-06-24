@@ -129,17 +129,32 @@ if __name__ == "__main__":
     )
 
     # Optional: create tables
-    simsum.initialize_tables(model=True, rattlesnake=False, bd=False)
+    simsum.initialize_tables(model=False, rattlesnake=False, bd=True)
 
-    # Query
+    # # Query
+    # df = simsum.query_sim_table("""
+    #     SELECT Study_Site, Experiment, Year, Month, Day, AVG(Rattlesnakes) AS Avg_Rattlesnakes, AVG(Krats) as Avg_Krats, AVG(Rattlesnakes_Density) AS Avg_Rattlesnakes_Density, AVG(Krats_Density) AS Avg_Krats_Density, AVG(Rattlesnakes_Active) AS Avg_Rattlesnakes_Active, AVG(Krats_Active) AS Avg_Krats_Active, count(distinct Sim_ID) AS Num_Sims
+    #     FROM model_db
+    #     group by Study_Site, Experiment, Year, Month, Day
+    # """)
     df = simsum.query_sim_table("""
-        SELECT Study_Site, Experiment, Year, Month, Day, AVG(Rattlesnakes) AS Avg_Rattlesnakes, AVG(Krats) as Avg_Krats, AVG(Rattlesnakes_Density) AS Avg_Rattlesnakes_Density, AVG(Krats_Density) AS Avg_Krats_Density, AVG(Rattlesnakes_Active) AS Avg_Rattlesnakes_Active, AVG(Krats_Active) AS Avg_Krats_Active, count(distinct Sim_ID) AS Num_Sims
-        FROM model_db
-        group by Study_Site, Experiment, Year, Month, Day
+        SELECT Study_Site,
+            Experiment,
+            Cause_Of_Death, 
+            Time_Step,
+            Species,
+            AVG(Mass) As mean_mass,
+            Count(Distinct Agent_id) AS num_agents,
+            AVG(Age) AS mean_age,
+            AVG(Body_Temperature) AS mean_body_temp
+        FROM birthdeath_db
+        WHERE Event_Type = 'Death'
+        AND Species = 'Rattlesnake'
+        group by Study_Site, Experiment, Cause_Of_Death, Time_step, Species
     """)
 
     # Write to CSV
-    output_path = "/mnt/d/Documents/summary_avg_model.csv"
+    output_path = "/mnt/d/Documents/summary_avg_bd.csv"
     df.to_csv(output_path)
 
     print(f"[INFO] Query results written to: {output_path}")
