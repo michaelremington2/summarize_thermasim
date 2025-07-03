@@ -129,7 +129,7 @@ if __name__ == "__main__":
     )
 
     # Optional: create tables
-    simsum.initialize_tables(model=False, rattlesnake=False, bd=True)
+    simsum.initialize_tables(model=True, rattlesnake=False, bd=True)
 
     # # Query
     # df = simsum.query_sim_table("""

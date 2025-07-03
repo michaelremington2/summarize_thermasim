@@ -34,24 +34,36 @@ class CollateModel:
         """)
         return
 
-    def insert_csv(self, csv_path, site, experiment,sim_id):
+    def insert_csv(self, csv_path, site, experiment):
         self.con.execute(f"""
                 INSERT INTO {self.table_name}
                 SELECT
                     '{site}' AS Study_Site,
                     '{experiment}' AS Experiment,
-                    {sim_id} AS sim_id,
                     Time_Step, 
-                    Hour,
+                    Hour, 
                     Day, 
                     Month, 
-                    Year, 
-                    Rattlesnakes,
-                    Krats,
+                    Year,
+                    Rattlesnakes, 
+                    Krats, 
                     Rattlesnakes_Density, 
-                    Krats_Density,
-                    Rattlesnakes_Active,
-                    Krats_Active
+                    Krats_Density, 
+                    Rattlesnakes_Active, 
+                    Krats_Active,
+                    Foraging, 
+                    Thermoregulating, 
+                    Resting, 
+                    Searching, 
+                    Brumating,
+                    Snakes_in_Burrow, 
+                    Snakes_in_Open,
+                    mean_thermal_quality, 
+                    mean_thermal_accuracy, 
+                    count_interactions, 
+                    count_successful_interactions,
+                    seed, 
+                    sim_id
                 FROM read_csv_auto('{csv_path}')
             """)
         return
