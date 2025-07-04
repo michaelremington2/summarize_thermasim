@@ -18,7 +18,6 @@ class CollateModel:
         CREATE OR REPLACE TABLE {self.table_name} (
         Study_Site TEXT,
         Experiment TEXT,
-        sim_id INTEGER,
         Time_Step INTEGER, 
         Hour INTEGER,
         Day INTEGER, 
@@ -29,7 +28,20 @@ class CollateModel:
         Rattlesnakes_Density DOUBLE, 
         Krats_Density DOUBLE,
         Rattlesnakes_Active INTEGER,
-        Krats_Active INTEGER
+        Krats_Active INTEGER,
+        Foraging INTEGER, 
+        Thermoregulating INTEGER, 
+        Resting INTEGER, 
+        Searching INTEGER, 
+        Brumating INTEGER,
+        Snakes_in_Burrow INTEGER, 
+        Snakes_in_Open INTEGER,
+        mean_thermal_quality DOUBLE, 
+        mean_thermal_accuracy DOUBLE, 
+        count_interactions INTEGER, 
+        count_successful_interactions INTEGER,
+        seed INTEGER, 
+        sim_id INTEGER
         );
         """)
         return
@@ -89,8 +101,8 @@ class CollateModel:
             try:
                 site = meta_utilz.extract_site(file)
                 experiment = meta_utilz.extract_experiment_name(file)
-                sim_id = meta_utilz.extract_sim_id(file)
-                self.insert_csv(str(file), site, experiment, sim_id)
+                #sim_id = meta_utilz.extract_sim_id(file)
+                self.insert_csv(str(file), site, experiment)
             except Exception as e:
                 print(f"[WARN] Failed to process {file}: {e}")
         return
