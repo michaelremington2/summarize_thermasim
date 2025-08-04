@@ -35,7 +35,7 @@ class CollateRattlesnake:
             Prey_Encountered DOUBLE, 
             Prey_Consumed DOUBLE,
             Experiment TEXT,
-            sim_id as INTEGER
+            sim_id INTEGER
         );
         """)
 
