@@ -20,13 +20,13 @@ class CollateRattlesnake:
             Month INTEGER, 
             Year INTEGER, 
             Study_Site TEXT,
-            Experiment TEXT,
             Agent_id INTEGER, 
             Active BOOLEAN,
             Alive BOOLEAN, 
             Behavior TEXT, 
             Microhabitat TEXT, 
-            Body_Temperature DOUBLE, 
+            Body_Temperature DOUBLE,
+            T_Env DOUBLE, 
             Mass DOUBLE,
             Metabolic_State DOUBLE, 
             Handling_Time DOUBLE, 
@@ -34,7 +34,7 @@ class CollateRattlesnake:
             Prey_Density DOUBLE,
             Prey_Encountered DOUBLE, 
             Prey_Consumed DOUBLE,
-            Experiment TEXT,
+            Experiment TEXT, 
             sim_id INTEGER
         );
         """)

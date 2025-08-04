@@ -35,7 +35,7 @@ class CollateBirthDeath:
             Body_Temperature DOUBLE,
             ct_min DOUBLE,
             ct_max DOUBLE,
-            experiment TEXT,
+            Experiment TEXT,
             sim_id INTEGER
         );
         """)

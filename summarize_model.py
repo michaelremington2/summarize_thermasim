@@ -16,13 +16,12 @@ class CollateModel:
     def create_table(self):
         self.con.execute(f"""
         CREATE OR REPLACE TABLE {self.table_name} (
-        Study_Site TEXT,
-        Experiment TEXT,
         Time_Step INTEGER, 
         Hour INTEGER,
         Day INTEGER, 
         Month INTEGER, 
         Year INTEGER, 
+        Site_Name TEXT,
         Rattlesnakes INTEGER,
         Krats INTEGER,
         Rattlesnakes_Density DOUBLE, 
