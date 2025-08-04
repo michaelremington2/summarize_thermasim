@@ -14,14 +14,13 @@ class CollateRattlesnake:
     def create_table(self):
         self.con.execute(f"""
         CREATE OR REPLACE TABLE {self.table_name} (
-            Study_Site TEXT,
-            Experiment TEXT,
-            sim_id INTEGER,
             Time_Step INTEGER, 
             Hour INTEGER, 
             Day INTEGER, 
             Month INTEGER, 
             Year INTEGER, 
+            Study_Site TEXT,
+            Experiment TEXT,
             Agent_id INTEGER, 
             Active BOOLEAN,
             Alive BOOLEAN, 
@@ -35,6 +34,8 @@ class CollateRattlesnake:
             Prey_Density DOUBLE,
             Prey_Encountered DOUBLE, 
             Prey_Consumed DOUBLE,
+            Experiment TEXT,
+            sim_id as INTEGER
         );
         """)
 
@@ -42,28 +43,28 @@ class CollateRattlesnake:
         self.con.execute(f"""
             INSERT INTO {self.table_name}
             SELECT
-                '{site}' AS Study_Site,
-                '{experiment}' AS Experiment,
-                {sim_id} AS sim_id,
-                Time_Step, 
+                Time_Step,
                 Hour, 
                 Day, 
                 Month, 
                 Year, 
+                Site_Name, 
                 Agent_id, 
-                Active,
-                Alive, 
+                Active, 
+                Alive,
                 Behavior, 
-                Microhabitat, 
-                Body_Temperature,
-                T_Env as Environment_Temperature, 
-                Mass,
+                Microhabitat,
+                Body_Temperature, 
+                T_Env, 
+                Mass, 
                 Metabolic_State, 
-                Handling_Time, 
-                Attack_Rate, 
+                Handling_Time,
+                Attack_Rate,
                 Prey_Density,
                 Prey_Encountered, 
                 Prey_Consumed,
+                {experiment} AS Experiment,
+                {sim_id} AS sim_id
             FROM read_csv_auto('{csv_path}')
         """)
         return

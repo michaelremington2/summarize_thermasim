@@ -50,13 +50,12 @@ class CollateModel:
         self.con.execute(f"""
                 INSERT INTO {self.table_name}
                 SELECT
-                    '{site}' AS Study_Site,
-                    '{experiment}' AS Experiment,
-                    Time_Step, 
+                    Time_Step,
                     Hour, 
                     Day, 
                     Month, 
-                    Year,
+                    Year, 
+                    Site_Name,
                     Rattlesnakes, 
                     Krats, 
                     Rattlesnakes_Density, 
@@ -72,6 +71,7 @@ class CollateModel:
                     Snakes_in_Open,
                     mean_thermal_quality, 
                     mean_thermal_accuracy, 
+                    mean_metabolic_state,
                     count_interactions, 
                     count_successful_interactions,
                     seed, 

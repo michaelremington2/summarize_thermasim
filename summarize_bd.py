@@ -15,10 +15,12 @@ class CollateBirthDeath:
     def create_table(self):
         self.con.execute(f"""
         CREATE OR REPLACE TABLE {self.table_name} (
-            Study_Site TEXT,
-            Experiment TEXT,
-            sim_id TEXT,
             Time_Step INTEGER,
+            Hour INTEGER, 
+            Day INTEGER, 
+            Month INTEGER, 
+            Year INTEGER, 
+            Site_Name TEXT,
             Agent_id TEXT,
             Species TEXT,
             Age DOUBLE,
@@ -32,7 +34,9 @@ class CollateBirthDeath:
             Litter_Size INTEGER,
             Body_Temperature DOUBLE,
             ct_min DOUBLE,
-            ct_max DOUBLE
+            ct_max DOUBLE,
+            experiment TEXT,
+            sim_id INTEGER
         );
         """)
         return
@@ -41,10 +45,12 @@ class CollateBirthDeath:
         self.con.execute(f"""
                 INSERT INTO {self.table_name}
                 SELECT
-                    '{site}' AS Study_Site,
-                    '{experiment}' AS Experiment,
-                    {sim_id} AS sim_id,
-                    Time_Step, 
+                    Time_Step,
+                    Hour, 
+                    Day, 
+                    Month, 
+                    Year, 
+                    Site_Name,
                     Agent_id,
                     Species,
                     Age,
@@ -58,7 +64,9 @@ class CollateBirthDeath:
                     Litter_Size,
                     Body_Temperature,
                     ct_min,
-                    ct_max
+                    ct_max,
+                    {experiment} AS Experiment,
+                    {sim_id} AS sim_id
                 FROM read_csv_auto('{csv_path}')
             """)
         return
