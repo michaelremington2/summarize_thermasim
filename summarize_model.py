@@ -37,6 +37,7 @@ class CollateModel:
         Snakes_in_Open INTEGER,
         mean_thermal_quality DOUBLE, 
         mean_thermal_accuracy DOUBLE, 
+        mean_metabolic_state DOUBLE,
         count_interactions INTEGER, 
         count_successful_interactions INTEGER,
         seed INTEGER, 
