@@ -4,7 +4,7 @@ import pathlib as pl
 
 
 site_names = ["Texas", "Nebraska", "Canada"]
-thermadb_path = "/scratch/mremington/Documents/therma_sim.duckdb"
+thermadb_path = "/scratch/mremington/Documents/post_thermasim/therma_sim.duckdb"
 parent_directory = pl.Path("/scratch/mremington/Documents/run_experiments/climate_exps/")
 
 simsum = main.SimSummarizer(
